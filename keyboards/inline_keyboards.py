@@ -1,6 +1,9 @@
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from collections import namedtuple
-from .callback_data import CallbackMenu
+from .callback_data import CallbackMenu, CallbackTalk, CallbackQuiz
+import os
+from utils.enum_path import Path
+from utils.file_manager import FileManager
 
 Button = namedtuple('Button', ['text', 'callback'])
 
@@ -11,7 +14,7 @@ def ikb_main_menu():
         Button('Рандомный факт', 'random'),
         Button('Спросить GPT', 'gpt'),
         Button('Разговор со звездой', 'talk'),
-        Button('КВИЗ','quiz')
+        Button('КВИЗ', 'quiz')
     ]
     for button in buttons:
         keyboard.button(
@@ -58,4 +61,77 @@ def ikb_cancel_gpt():
             text='Отмена',
             callback_data=CallbackMenu(button='start'),
         )
+    return keyboard.as_markup()
+
+
+def ikb_talk_menu():
+    keyboard = InlineKeyboardBuilder()
+    celebrity = [file.rsplit('.', 1)[0] for file in os.listdir(Path.IMAGES_DIR.value) if file.startswith('talk_')]
+    for item in celebrity:
+        text_button = FileManager.read_txt(Path.PROMPTS, item).split(',', 1)[0].split(' - ', 1)[-1]
+        keyboard.button(
+            text=text_button,
+            callback_data=CallbackTalk(
+                button='talk',
+                celebrity=item
+            )
+        )
+    keyboard.button(
+        text='В главное меню',
+        callback_data=CallbackMenu(button='start'),
+    )
+    keyboard.adjust(1)
+    return keyboard.as_markup()
+
+
+def ikb_talk_back():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(
+        text='Закончить',
+        callback_data=CallbackMenu(button='start'),
+    )
+    return keyboard.as_markup()
+
+
+def ikb_quiz_menu():
+    keyboard = InlineKeyboardBuilder()
+    buttons = [
+        Button('Программирование', 'quiz_prog'),
+        Button('Математика', 'quiz_math'),
+        Button('Биология', 'quiz_biology')
+    ]
+    for button in buttons:
+        keyboard.button(
+            text=button.text,
+            callback_data=CallbackQuiz(
+                button='quiz',
+                subject=button.callback
+            ),
+        )
+    keyboard.button(
+        text='В главное меню',
+        callback_data=CallbackMenu(button='start'),
+    )
+    keyboard.adjust(1)
+    return keyboard.as_markup()
+
+
+def ikb_quiz_navigation():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(
+        text='Еще вопрос!',
+        callback_data=CallbackQuiz(
+            button='quiz',
+            subject='quiz_more'
+        )
+    )
+    keyboard.button(
+        text='Сменить тему',
+        callback_data=CallbackMenu(button='quiz'),
+    )
+    keyboard.button(
+        text='Закончить',
+        callback_data=CallbackMenu(button='start'),
+    )
+    keyboard.adjust(1)
     return keyboard.as_markup()

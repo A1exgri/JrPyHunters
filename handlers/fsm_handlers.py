@@ -6,8 +6,8 @@ from aiogram.types.input_file import FSInputFile
 from aiogram.enums.chat_action import ChatAction
 from aiogram.fsm.context import FSMContext
 
-from .fsm import GPTRequest
-from keyboards import ikb_gpt_menu
+from .fsm import GPTRequest, CelebrityTalk, Quiz
+from keyboards import ikb_gpt_menu, ikb_talk_back, ikb_quiz_navigation
 from utils import FileManager
 from utils.enum_path import Path
 from ai_open import chat_gpt
@@ -36,4 +36,47 @@ async def wait_for_user_request(message: Message, state: FSMContext, bot: Bot):
         chat_id=message.from_user.id,
         message_id=message_id,
         reply_markup=ikb_gpt_menu()
+    )
+
+
+@fsm_router.message(CelebrityTalk.dialog)
+async def user_dialog_with_celebrity(message: Message, state: FSMContext, bot: Bot):
+    message_list = await state.get_value('messages')
+    celebrity = await state.get_value('celebrity')
+    response = await chat_gpt.request(message_list, bot)
+    message_list.update(GPTRole.CHAT, response)
+    await state.update_data(messages=message_list)
+    await bot.send_photo(
+        chat_id=message.from_user.id,
+        photo=FSInputFile(Path.IMAGES.value.format(file=celebrity)),
+        caption=response,
+        reply_markup=ikb_talk_back()
+    )
+
+
+@fsm_router.message(Quiz.game)
+async def user_answer(message: Message, state: FSMContext, bot: Bot):
+    message_list = await state.get_value('messages')
+    message_id = await state.get_value('message_id')
+    score = await state.get_value('score')
+    message_list.update(GPTRole.USER, message.text)
+    response = await chat_gpt.request(message_list, bot)
+    message_list.update(GPTRole.CHAT, response)
+    await state.update_data(messages=message_list)
+    if response == 'Правильно':
+        score += 1
+        await state.update_data(score=score)
+    response += f'\n\nВаш счет: {score} баллов!'
+    await bot.delete_message(
+        chat_id=message.from_user.id,
+        message_id=message.message_id
+    )
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file='gpt')),
+            caption=response
+        ),
+        chat_id=message.from_user.id,
+        message_id=message_id,
+        reply_markup=ikb_quiz_navigation()
     )
