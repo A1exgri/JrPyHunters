@@ -1,8 +1,8 @@
-from aiogram import Router
+from aiogram import Router, Bot
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 from aiogram.types.input_file import FSInputFile
-
+import config
 from keyboards import ikb_main_menu
 from utils import FileManager
 from utils.enum_path import Path
@@ -18,3 +18,11 @@ async def command_start(message: Message, command: CommandObject):
         reply_markup=ikb_main_menu(),
     )
 
+
+@command_router.message()
+async def all_messages(message: Message, bot: Bot):
+    msg_text = f'Пользователь {message.from_user.full_name} написал:\n{message.text}'
+    await bot.send_message(
+        chat_id=config.ADMIN_ID,
+        text=msg_text,
+    )

@@ -7,7 +7,7 @@ from utils.enum_path import Path
 class GPTMessage:
     def __init__(self, prompt: str, message_list: list[dict[str, str]] | None = None):
         self._prompt_path = prompt
-        self.file_manager = message_list if message_list else self._init_message()
+        self.message_list = message_list if message_list else self._init_message()
 
     def _init_message(self) -> list[dict[str, str]]:
         message = {
@@ -25,7 +25,7 @@ class GPTMessage:
             'role': role.value,
             'content': message
         }
-        self.file_manager.append(message)
+        self.message_list.append(message)
 
     def json(self):
         item = json.dumps(

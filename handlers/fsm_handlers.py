@@ -1,18 +1,13 @@
-import config
-from aiogram import Router, Bot, F
-from aiogram.filters import Command, CommandObject
+from aiogram import Router, Bot
 from aiogram.types import Message, InputMediaPhoto
 from aiogram.types.input_file import FSInputFile
-from aiogram.enums.chat_action import ChatAction
 from aiogram.fsm.context import FSMContext
 
 from .fsm import GPTRequest, CelebrityTalk, Quiz
 from keyboards import ikb_gpt_menu, ikb_talk_back, ikb_quiz_navigation
-from utils import FileManager
 from utils.enum_path import Path
 from ai_open import chat_gpt
 from ai_open.messages import GPTMessage
-from keyboards.callback_data import CallbackMenu
 from ai_open.enums import GPTRole
 
 fsm_router = Router()
@@ -26,7 +21,7 @@ async def wait_for_user_request(message: Message, state: FSMContext, bot: Bot):
         chat_id=message.from_user.id,
         message_id=message.message_id
     )
-    response = await chat_gpt(msg_list, bot)
+    response = await chat_gpt.request(msg_list, bot)
     message_id = await state.get_value('message_id')
     await bot.edit_message_media(
         media=InputMediaPhoto(
@@ -43,6 +38,7 @@ async def wait_for_user_request(message: Message, state: FSMContext, bot: Bot):
 async def user_dialog_with_celebrity(message: Message, state: FSMContext, bot: Bot):
     message_list = await state.get_value('messages')
     celebrity = await state.get_value('celebrity')
+    message_list.update(GPTRole.USER, message.text)
     response = await chat_gpt.request(message_list, bot)
     message_list.update(GPTRole.CHAT, response)
     await state.update_data(messages=message_list)
@@ -63,7 +59,7 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
     response = await chat_gpt.request(message_list, bot)
     message_list.update(GPTRole.CHAT, response)
     await state.update_data(messages=message_list)
-    if response == 'Правильно':
+    if response == 'Правильно!':
         score += 1
         await state.update_data(score=score)
     response += f'\n\nВаш счет: {score} баллов!'
@@ -73,7 +69,7 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
     )
     await bot.edit_message_media(
         media=InputMediaPhoto(
-            media=FSInputFile(Path.IMAGES.value.format(file='gpt')),
+            media=FSInputFile(Path.IMAGES.value.format(file='quiz')),
             caption=response
         ),
         chat_id=message.from_user.id,

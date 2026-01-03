@@ -20,7 +20,8 @@ inline_router = Router()
 
 @inline_router.callback_query(CallbackMenu.filter(F.button == "start"))
 @inline_router.callback_query(CallbackMenu.filter(F.button == "main"))
-async def main_menu(callback: CallbackQuery, callback_data: CallbackMenu, bot: Bot):
+async def main_menu(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
+    await state.clear()
     await bot.edit_message_media(
         media=InputMediaPhoto(
             media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
@@ -33,8 +34,7 @@ async def main_menu(callback: CallbackQuery, callback_data: CallbackMenu, bot: B
 
 
 @inline_router.callback_query(CallbackMenu.filter(F.button == "random"))
-async def random_handler(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
-    await state.clear()
+async def random_handler(callback: CallbackQuery, callback_data: CallbackMenu, bot: Bot):
     await bot.edit_message_media(
         media=InputMediaPhoto(
             media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
@@ -60,7 +60,7 @@ async def random_handler(callback: CallbackQuery, callback_data: CallbackMenu, s
 
 
 @inline_router.callback_query(CallbackMenu.filter(F.button == "gpt"))
-async def gpt_handler(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
+async def gpt_menu(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
     await state.set_state(GPTRequest.wait_for_request)
     await state.update_data(
         message_id=callback.message.message_id
@@ -99,8 +99,8 @@ async def talk_with_celebrity(callback: CallbackQuery, callback_data: CallbackTa
     await state.update_data(messages=message_list, celebrity=callback_data.celebrity)
     await bot.edit_message_media(
         media=InputMediaPhoto(
-            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
-            caption=FileManager.read_txt(Path.MESSAGES, callback_data.button),
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.celebrity)),
+            caption=response,
         ),
         chat_id=callback.from_user.id,
         message_id=callback.message.message_id,
@@ -108,7 +108,7 @@ async def talk_with_celebrity(callback: CallbackQuery, callback_data: CallbackTa
     )
 
 
-@inline_router.callback_query(CallbackMenu.filter(F.button == "quiz"))
+@inline_router.callback_query(CallbackMenu.filter(F.button == 'quiz'))
 async def quiz_menu(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
     await state.set_state(Quiz.game)
     messages = await state.get_value('messages')

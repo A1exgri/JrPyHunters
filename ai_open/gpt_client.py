@@ -1,4 +1,4 @@
-import httpx as httpx
+import httpx
 import openai
 from aiogram import Bot
 
@@ -36,10 +36,23 @@ class GPTService:
                 messages=message_list.message_list,
                 model=self._model,
             )
-
             return response.choices[0].message.content
         except Exception as e:
             await bot.send_message(
                 chat_id=config.ADMIN_ID,
                 text=str(e)
             )
+
+    # async def transcript_voice(self, file, bot: Bot):
+    #     try:
+    #         with open(file, "rb") as audio_file:
+    #             transcript = await self._client.audio.transcriptions.create(
+    #                 model=GPTModel.WHISPER.value,
+    #                 file=audio_file
+    #             )
+    #             return transcript.text
+    #     except Exception as e:
+    #         await bot.send_message(
+    #             chat_id=config.ADMIN_ID,
+    #             text=str(e),
+    #         )
