@@ -13,3 +13,13 @@ class CallbackTalk(CallbackData, prefix="CT"):
 class CallbackQuiz(CallbackData, prefix="CQ"):
     button: str
     subject: str
+
+
+class CallbackTranslater(CallbackData, prefix="CTR"):
+    button: str
+    language: str
+
+
+class CallbackRecommendations(CallbackData, prefix="CR"):
+    button: str
+    theme: str

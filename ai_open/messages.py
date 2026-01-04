@@ -27,6 +27,9 @@ class GPTMessage:
         }
         self.message_list.append(message)
 
+    def delete(self):
+        self.message_list.pop()
+
     def json(self):
         item = json.dumps(
             self,

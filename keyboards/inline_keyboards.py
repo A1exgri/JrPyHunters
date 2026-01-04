@@ -1,6 +1,6 @@
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from collections import namedtuple
-from .callback_data import CallbackMenu, CallbackTalk, CallbackQuiz
+from .callback_data import CallbackMenu, CallbackTalk, CallbackQuiz, CallbackTranslater, CallbackRecommendations
 import os
 from utils.enum_path import Path
 from utils.file_manager import FileManager
@@ -14,7 +14,9 @@ def ikb_main_menu():
         Button('Рандомный факт', 'random'),
         Button('Спросить GPT', 'gpt'),
         Button('Разговор со звездой', 'talk'),
-        Button('КВИЗ', 'quiz')
+        Button('КВИЗ', 'quiz'),
+        Button('Переводчик', 'translater'),
+        Button('Рекомендации', 'recommendations')
     ]
     for button in buttons:
         keyboard.button(
@@ -134,4 +136,80 @@ def ikb_quiz_navigation():
         callback_data=CallbackMenu(button='start'),
     )
     keyboard.adjust(1)
+    return keyboard.as_markup()
+
+
+def ikb_translater_menu():
+    keyboard = InlineKeyboardBuilder()
+    buttons = [
+        Button('Английский', 'translater_english'),
+        Button('Немецкий', 'translater_german'),
+        Button('Русский', 'translater_russian')
+    ]
+    for button in buttons:
+        keyboard.button(
+            text=button.text,
+            callback_data=CallbackTranslater(
+                button='translater',
+                language=button.callback
+            ),
+        )
+    keyboard.button(
+        text='В главное меню',
+        callback_data=CallbackMenu(button='start'),
+    )
+    keyboard.adjust(1)
+    return keyboard.as_markup()
+
+
+def ikb_translater_back():
+    keyboard = InlineKeyboardBuilder()
+    buttons = [
+        Button('Сменить язык', 'translater'),
+        Button('Закончить', 'start')
+    ]
+
+    for button in buttons:
+        keyboard.button(
+            text=button.text,
+            callback_data=CallbackMenu(button=button.callback),
+        )
+    return keyboard.as_markup()
+
+
+def ikb_recommendations_menu():
+    keyboard = InlineKeyboardBuilder()
+    buttons = [
+        Button('Фильмы', 'recommendations_movies'),
+        Button('Книги', 'recommendations_books'),
+        Button('Музыка', 'recommendations_music')
+    ]
+    for button in buttons:
+        keyboard.button(
+            text=button.text,
+            callback_data=CallbackRecommendations(
+                button='recommendations',
+                theme=button.callback
+            ),
+        )
+    keyboard.button(
+        text='В главное меню',
+        callback_data=CallbackMenu(button='start'),
+    )
+    keyboard.adjust(1)
+    return keyboard.as_markup()
+
+
+def ikb_recommendations_back():
+    keyboard = InlineKeyboardBuilder()
+    buttons = [
+        Button('Не нравится!', 'recommendations'),
+        Button('Закончить', 'start')
+    ]
+
+    for button in buttons:
+        keyboard.button(
+            text=button.text,
+            callback_data=CallbackMenu(button=button.callback),
+        )
     return keyboard.as_markup()

@@ -1,19 +1,18 @@
-import config
 from aiogram import Router, Bot, F
-from aiogram.filters import Command, CommandObject
 from aiogram.types import CallbackQuery, InputMediaPhoto
 from aiogram.types.input_file import FSInputFile
 from aiogram.enums.chat_action import ChatAction
 from aiogram.fsm.context import FSMContext
 
-from .fsm import GPTRequest, CelebrityTalk, Quiz
-from keyboards import ikb_main_menu, ikb_random, ikb_cancel_gpt, ikb_talk_menu, ikb_talk_back, ikb_quiz_menu
+from .fsm import GPTRequest, CelebrityTalk, Quiz, Translater, Recommendations
+from keyboards import ikb_main_menu, ikb_random, ikb_cancel_gpt, ikb_talk_menu, ikb_talk_back, ikb_quiz_menu, \
+    ikb_translater_menu, ikb_translater_back, ikb_recommendations_menu, ikb_recommendations_back
 from utils import FileManager
 from utils.enum_path import Path
 from ai_open import chat_gpt
 from ai_open.messages import GPTMessage
 from ai_open.enums import GPTRole
-from keyboards.callback_data import CallbackMenu, CallbackTalk, CallbackQuiz
+from keyboards.callback_data import CallbackMenu, CallbackTalk, CallbackQuiz, CallbackTranslater, CallbackRecommendations
 
 inline_router = Router()
 
@@ -141,4 +140,72 @@ async def select_subject(callback: CallbackQuery, callback_data: CallbackQuiz, s
         chat_id=callback.from_user.id,
         message_id=callback.message.message_id,
         reply_markup=ikb_talk_back()
+    )
+
+
+@inline_router.callback_query(CallbackMenu.filter(F.button == "translater"))
+async def translater_menu(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
+    await state.set_state(Translater.language)
+    messages = await state.get_value('messages')
+    if not messages:
+        await state.update_data(messages=None, message_id=callback.message.message_id)
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
+            caption=FileManager.read_txt(Path.MESSAGES, callback_data.button),
+        ),
+        chat_id=callback.from_user.id,
+        message_id=callback.message.message_id,
+        reply_markup=ikb_translater_menu()
+    )
+
+
+@inline_router.callback_query(CallbackTranslater.filter(F.button == "translater"))
+async def translater_language(callback: CallbackQuery, callback_data: CallbackTranslater, state: FSMContext, bot: Bot):
+    message_list = await state.get_value('messages')
+    if not message_list:
+        message_list = GPTMessage('translater')
+    message_list.update(GPTRole.USER, callback_data.language)
+    response = await chat_gpt.request(message_list, bot)
+    await state.update_data(messages=message_list)
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
+            caption=response,
+        ),
+        chat_id=callback.from_user.id,
+        message_id=callback.message.message_id,
+        reply_markup=ikb_translater_back()
+    )
+
+
+@inline_router.callback_query(CallbackMenu.filter(F.button == "recommendations"))
+async def recommendations_menu(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
+    await state.clear()
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
+            caption=FileManager.read_txt(Path.MESSAGES, callback_data.button),
+        ),
+        chat_id=callback.from_user.id,
+        message_id=callback.message.message_id,
+        reply_markup=ikb_recommendations_menu()
+    )
+
+
+@inline_router.callback_query(CallbackRecommendations.filter(F.button == "recommendations"))
+async def recommendations_theme(callback: CallbackQuery, callback_data: CallbackRecommendations, state: FSMContext, bot: Bot):
+    await state.set_state(Recommendations.recommendation)
+    message_list = GPTMessage(callback_data.theme)
+    response = await chat_gpt.request(message_list, bot)
+    message_list.update(GPTRole.CHAT, response)
+    await state.update_data(messages=message_list, theme=callback_data.theme)
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.theme)),
+            caption=response,
+        ),
+        chat_id=callback.from_user.id,
+        message_id=callback.message.message_id,
+        reply_markup=ikb_recommendations_back()
     )

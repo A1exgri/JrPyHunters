@@ -23,10 +23,11 @@ class GPTService:
 
     def _create_client(self):
         gpt_client = openai.AsyncOpenAI(
-            api_key=self._gpt_token,
-            http_client=httpx.AsyncClient(
-                proxy=self._proxy
-            )
+            base_url="https://openai.javarush.com/v1", api_key=self._gpt_token
+            # api_key=self._gpt_token,
+            # http_client=httpx.AsyncClient(
+            #     proxy=self._proxy
+            # )
         )
         return gpt_client
 

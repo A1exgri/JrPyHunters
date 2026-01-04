@@ -11,3 +11,11 @@ class CelebrityTalk(StatesGroup):
 
 class Quiz(StatesGroup):
     game = State()
+
+
+class Translater(StatesGroup):
+    language = State()
+
+
+class Recommendations(StatesGroup):
+    recommendation = State()

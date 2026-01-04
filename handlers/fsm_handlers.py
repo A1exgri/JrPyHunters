@@ -3,8 +3,8 @@ from aiogram.types import Message, InputMediaPhoto
 from aiogram.types.input_file import FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from .fsm import GPTRequest, CelebrityTalk, Quiz
-from keyboards import ikb_gpt_menu, ikb_talk_back, ikb_quiz_navigation
+from .fsm import GPTRequest, CelebrityTalk, Quiz, Translater, Recommendations
+from keyboards import ikb_gpt_menu, ikb_talk_back, ikb_quiz_navigation, ikb_translater_back
 from utils.enum_path import Path
 from ai_open import chat_gpt
 from ai_open.messages import GPTMessage
@@ -55,6 +55,9 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
     message_list = await state.get_value('messages')
     message_id = await state.get_value('message_id')
     score = await state.get_value('score')
+    print('message_list', message_list.message_list)
+    print('message_id', message_id)
+    print('language', score)
     message_list.update(GPTRole.USER, message.text)
     response = await chat_gpt.request(message_list, bot)
     message_list.update(GPTRole.CHAT, response)
@@ -75,4 +78,48 @@ async def user_answer(message: Message, state: FSMContext, bot: Bot):
         chat_id=message.from_user.id,
         message_id=message_id,
         reply_markup=ikb_quiz_navigation()
+    )
+
+
+@fsm_router.message(Translater.language)
+async def translation_from_language(message: Message, state: FSMContext, bot: Bot):
+    message_list = await state.get_value('messages')
+    message_id = await state.get_value('message_id')
+    message_list.update(GPTRole.USER, message.text)
+    response = await chat_gpt.request(message_list, bot)
+    message_list.delete()
+    await bot.delete_message(
+        chat_id=message.from_user.id,
+        message_id=message.message_id
+    )
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file='translater')),
+            caption=response
+        ),
+        chat_id=message.from_user.id,
+        message_id=message_id,
+        reply_markup=ikb_translater_back()
+    )
+
+
+@fsm_router.message(Recommendations.recommendation)
+async def translation_from_language(message: Message, state: FSMContext, bot: Bot):
+    message_list = await state.get_value('messages')
+    message_id = await state.get_value('message_id')
+    message_list.update(GPTRole.USER, message.text)
+    response = await chat_gpt.request(message_list, bot)
+    message_list.update(GPTRole.CHAT, response)
+    await bot.delete_message(
+        chat_id=message.from_user.id,
+        message_id=message.message_id
+    )
+    await bot.edit_message_media(
+        media=InputMediaPhoto(
+            media=FSInputFile(Path.IMAGES.value.format(file='recommendations')),
+            caption=response
+        ),
+        chat_id=message.from_user.id,
+        message_id=message_id,
+        reply_markup=ikb_translater_back()
     )
