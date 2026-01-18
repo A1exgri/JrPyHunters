@@ -145,10 +145,7 @@ async def select_subject(callback: CallbackQuery, callback_data: CallbackQuiz, s
 
 @inline_router.callback_query(CallbackMenu.filter(F.button == "translater"))
 async def translater_menu(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
-    await state.set_state(Translater.language)
-    messages = await state.get_value('messages')
-    if not messages:
-        await state.update_data(messages=None, message_id=callback.message.message_id)
+    await state.clear()
     await bot.edit_message_media(
         media=InputMediaPhoto(
             media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
@@ -181,7 +178,10 @@ async def translater_language(callback: CallbackQuery, callback_data: CallbackTr
 
 @inline_router.callback_query(CallbackMenu.filter(F.button == "recommendations"))
 async def recommendations_menu(callback: CallbackQuery, callback_data: CallbackMenu, state: FSMContext, bot: Bot):
-    await state.clear()
+    await state.set_state(Recommendations.recommendation)
+    messages = await state.get_value('messages')
+    if not messages:
+        await state.update_data(messages=None, message_id=callback.message.message_id)
     await bot.edit_message_media(
         media=InputMediaPhoto(
             media=FSInputFile(Path.IMAGES.value.format(file=callback_data.button)),
@@ -195,17 +195,27 @@ async def recommendations_menu(callback: CallbackQuery, callback_data: CallbackM
 
 @inline_router.callback_query(CallbackRecommendations.filter(F.button == "recommendations"))
 async def recommendations_theme(callback: CallbackQuery, callback_data: CallbackRecommendations, state: FSMContext, bot: Bot):
-    await state.set_state(Recommendations.recommendation)
-    message_list = GPTMessage(callback_data.theme)
-    response = await chat_gpt.request(message_list, bot)
-    message_list.update(GPTRole.CHAT, response)
-    await state.update_data(messages=message_list, theme=callback_data.theme)
+    if callback_data.theme == 'recommendations_more':
+        message_list = await state.get_value('messages')
+        message_list.update(GPTRole.USER, callback_data.theme)
+        text = await chat_gpt.request(message_list, bot)
+        message_list.update(GPTRole.CHAT, text)
+        await state.update_data(messages=message_list)
+        file = await state.get_value('theme')
+        message_id = await state.get_value('message_id')
+    else:
+        await state.set_state(Recommendations.recommendation)
+        message_list = GPTMessage(callback_data.theme)
+        file = callback_data.theme
+        message_id = callback.message.message_id
+        text = 'В каком жанре тебе посоветовать?'
+        await state.update_data(messages=message_list, theme=callback_data.theme, message_id=callback.message.message_id)
     await bot.edit_message_media(
         media=InputMediaPhoto(
-            media=FSInputFile(Path.IMAGES.value.format(file=callback_data.theme)),
-            caption=response,
+            media=FSInputFile(Path.IMAGES.value.format(file=file)),
+            caption=text,
         ),
         chat_id=callback.from_user.id,
-        message_id=callback.message.message_id,
+        message_id=message_id,
         reply_markup=ikb_recommendations_back()
     )

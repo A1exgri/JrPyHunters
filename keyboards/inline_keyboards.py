@@ -202,14 +202,16 @@ def ikb_recommendations_menu():
 
 def ikb_recommendations_back():
     keyboard = InlineKeyboardBuilder()
-    buttons = [
-        Button('Не нравится!', 'recommendations'),
-        Button('Закончить', 'start')
-    ]
-
-    for button in buttons:
-        keyboard.button(
-            text=button.text,
-            callback_data=CallbackMenu(button=button.callback),
+    keyboard.button(
+        text='Не нравится!',
+        callback_data=CallbackRecommendations(
+            button='recommendations',
+            theme='recommendations_more'
         )
+    )
+    keyboard.button(
+        text='Закончить',
+        callback_data=CallbackMenu(button='start'),
+    )
+    keyboard.adjust(2)
     return keyboard.as_markup()
